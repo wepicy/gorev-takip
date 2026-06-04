@@ -266,7 +266,7 @@ let detailId=null, editOpen=false, newTags=[], editTags=[];
 
 function setSyncStatus(state) {
   const dot=document.getElementById('sync-dot'), text=document.getElementById('sync-text');
-  if(state==='ok'){dot.className='sync-dot green';text.textContent='Senkronize';}
+  if(state==='ok'){dot.className='sync-dot green';text.textContent='Senkronize, her şey yolunda';}
   else if(state==='saving'){dot.className='sync-dot yellow';text.textContent='Kaydediliyor...';}
   else if(state==='error'){dot.className='sync-dot red';text.textContent='Bağlantı hatası';}
   else{dot.className='sync-dot';text.textContent='Bağlanıyor...';}
