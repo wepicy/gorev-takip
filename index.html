@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Görev Takip</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f8; color: #1a1a18; min-height: 100vh; }
+.container { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.header h1 { font-size: 20px; font-weight: 500; }
+.warning-band { border-radius: 8px; padding: 8px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.warning-band.danger { background: #FCEBEB; border: 0.5px solid #E24B4A; color: #501313; }
+.warning-band.warn { background: #FAEEDA; border: 0.5px solid #EF9F27; color: #412402; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.stat { background: #fff; border: 0.5px solid #e5e5e3; border-radius: 10px; padding: 12px 14px; }
+.stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 500; }
+.form-card { background: #fff; border: 0.5px solid #e5e5e3; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+.form-title { font-size: 14px; font-weight: 500; color: #666; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 12px; color: #666; }
+.form-group input, .form-group select, .form-group textarea { font-family: inherit; font-size: 14px; padding: 7px 10px; border: 0.5px solid #d0d0ce; border-radius: 8px; background: #fff; color: #1a1a18; outline: none; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #888; }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.tag-input-wrap { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; border: 0.5px solid #d0d0ce; border-radius: 8px; padding: 5px 8px; min-height: 36px; cursor: text; background: #fff; }
+.tag-input-wrap input { border: none; outline: none; font-size: 13px; background: transparent; color: #1a1a18; min-width: 80px; flex: 1; font-family: inherit; padding: 0; }
+.tag-pill { display: flex; align-items: center; gap: 4px; background: #EEEDFE; color: #3C3489; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+.tag-pill button { background: none; border: none; cursor: pointer; color: #3C3489; font-size: 12px; padding: 0; line-height: 1; opacity: 0.7; }
+.btn-row { display: flex; justify-content: space-between; margin-top: 12px; align-items: center; }
+.btn-primary { background: #1a1a18; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
+.btn-primary:hover { opacity: 0.85; }
+.export-btn { background: transparent; border: 0.5px solid #d0d0ce; border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; display: flex; align-items: center; gap: 5px; }
+.export-btn:hover { color: #1a1a18; border-color: #888; }
+.tab-row { display: flex; margin-bottom: 1rem; border-bottom: 0.5px solid #e5e5e3; }
+.tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #888; font-family: inherit; margin-bottom: -0.5px; display: flex; align-items: center; gap: 5px; }
+.tab-btn.active { color: #1a1a18; border-bottom-color: #1a1a18; font-weight: 500; }
+.tab-badge { background: #f1f0ee; color: #888; font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+.tab-badge.red { background: #FCEBEB; color: #791F1F; }
+.filters { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+.filter-btn { background: transparent; border: 0.5px solid #d0d0ce; border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: #888; font-family: inherit; transition: all 0.15s; }
+.filter-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.filter-search { flex: 1; min-width: 120px; font-size: 13px; padding: 5px 10px; border: 0.5px solid #d0d0ce; border-radius: 8px; font-family: inherit; outline: none; background: #fff; }
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-card { background: #fff; border: 0.5px solid #e5e5e3; border-radius: 12px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; transition: border-color 0.15s; }
+.task-card:hover { border-color: #c0c0be; }
+.task-card:hover .delete-btn { opacity: 1; }
+.task-card.overdue { border-left: 3px solid #E24B4A; border-radius: 0 12px 12px 0; }
+.task-card.done { opacity: 0.5; }
+.task-card.trash-card { cursor: default; }
+.task-num { font-size: 12px; color: #aaa; font-weight: 500; min-width: 20px; margin-top: 2px; }
+.task-body { flex: 1; min-width: 0; }
+.task-title { font-size: 14px; font-weight: 500; color: #1a1a18; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-title.done-text { text-decoration: line-through; color: #aaa; }
+.task-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 400; }
+.badge-eposta { background:#E6F1FB;color:#0C447C; }
+.badge-toplanti { background:#EEEDFE;color:#3C3489; }
+.badge-teams { background:#E1F5EE;color:#085041; }
+.badge-sozlu { background:#FAEEDA;color:#633806; }
+.badge-diger { background:#F1EFE8;color:#444441; }
+.badge-birim { background:#FBEAF0;color:#72243E; }
+.badge-oncelik-yuksek { background:#FCEBEB;color:#791F1F; }
+.badge-oncelik-orta { background:#FAEEDA;color:#633806; }
+.badge-oncelik-dusuk { background:#EAF3DE;color:#27500A; }
+.badge-durum-bekliyor { background:#F1EFE8;color:#444441; }
+.badge-durum-devam { background:#E6F1FB;color:#0C447C; }
+.badge-durum-tamamlandi { background:#EAF3DE;color:#27500A; }
+.badge-tag { background:#EEEDFE;color:#3C3489; }
+.badge-tekrar { background:#FDF3FC;color:#6B2A6B; }
+.badge-linked { background:#E8F6FB;color:#0A4A60; }
+.task-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.task-date { font-size: 12px; color: #aaa; white-space: nowrap; }
+.task-date.overdue-text { color: #E24B4A; }
+.delete-btn { background: transparent; border: none; cursor: pointer; color: #aaa; padding: 3px; border-radius: 4px; display: flex; align-items: center; opacity: 0; transition: opacity 0.15s; }
+.delete-btn:hover { color: #E24B4A; background: #FCEBEB; }
+.restore-btn { background: transparent; border: 0.5px solid #d0d0ce; cursor: pointer; color: #666; padding: 4px 8px; border-radius: 8px; display: flex; align-items: center; gap: 4px; font-size: 12px; font-family: inherit; }
+.restore-btn:hover { color: #1a1a18; }
+.perm-del-btn { background: transparent; border: none; cursor: pointer; color: #aaa; padding: 4px; border-radius: 4px; display: flex; align-items: center; }
+.perm-del-btn:hover { color: #E24B4A; }
+.empty { text-align: center; padding: 2.5rem 0; color: #aaa; font-size: 14px; }
+.section-divider { display: flex; align-items: center; gap: 8px; margin: 1.5rem 0 1rem; }
+.section-divider span { font-size: 12px; color: #aaa; white-space: nowrap; }
+.section-divider::before,.section-divider::after { content:'';flex:1;height:0.5px;background:#e5e5e3; }
+.trash-actions { display: flex; align-items: center; gap: 6px; }
+.clear-all-btn { background:transparent;border:none;cursor:pointer;font-size:12px;color:#aaa;font-family:inherit;padding:4px 8px;border-radius:8px; }
+.clear-all-btn:hover { color:#E24B4A;background:#FCEBEB; }
+.overlay { display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:100;justify-content:center;align-items:flex-start;padding:40px 16px; }
+.overlay.open { display:flex; }
+.detail-panel { background:#fff;border:0.5px solid #e5e5e3;border-radius:14px;width:100%;max-width:480px;padding:1.25rem;display:flex;flex-direction:column;max-height:85vh;overflow-y:auto; }
+.detail-header { display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px; }
+.detail-header-title { font-size:15px;font-weight:500;line-height:1.4;flex:1; }
+.detail-close { background:transparent;border:none;cursor:pointer;color:#aaa;padding:2px;border-radius:4px;display:flex;align-items:center;flex-shrink:0; }
+.detail-close:hover { color:#1a1a18; }
+.detail-row { display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:0.5px solid #e5e5e3; }
+.detail-row-label { font-size:12px;color:#888;min-width:80px;padding-top:2px; }
+.detail-row-val { font-size:13px;flex:1; }
+.detail-note { padding:10px 12px;background:#f9f9f8;border-radius:8px;font-size:13px;line-height:1.6;width:100%; }
+.detail-note.empty-note { color:#aaa;font-style:italic; }
+.durum-btns { display:flex;gap:5px;flex:1; }
+.durum-btn { flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;border:0.5px solid #e5e5e3;border-radius:8px;cursor:pointer;font-size:11px;color:#888;font-family:inherit;background:transparent;transition:all 0.1s; }
+.durum-btn:hover { background:#f9f9f8;color:#1a1a18; }
+.durum-btn.selected { font-weight:500;color:#1a1a18;border-color:#888;background:#f9f9f8; }
+.durum-btn .dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+.dot-bekliyor{background:#888780}.dot-devam{background:#378ADD}.dot-tamam{background:#639922}
+.detail-actions { display:flex;gap:8px;margin-top:12px; }
+.detail-edit-btn,.detail-del-btn { background:transparent;border:0.5px solid #d0d0ce;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px; }
+.detail-edit-btn { color:#666; }
+.detail-edit-btn:hover { color:#1a1a18;border-color:#888; }
+.detail-del-btn { color:#E24B4A;border-color:#E24B4A; }
+.detail-del-btn:hover { background:#FCEBEB; }
+.edit-form { display:none;flex-direction:column;gap:10px;margin-top:12px;padding-top:12px;border-top:0.5px solid #e5e5e3; }
+.edit-form.open { display:flex; }
+.edit-save-btn { background:#1a1a18;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-family:inherit;align-self:flex-end; }
+.history-list { display:flex;flex-direction:column;width:100%; }
+.history-item { display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:0.5px solid #e5e5e3; }
+.history-dot { width:7px;height:7px;border-radius:50%;background:#d0d0ce;margin-top:4px;flex-shrink:0; }
+.history-text { font-size:12px;color:#888;flex:1;line-height:1.5; }
+.history-date { font-size:11px;color:#aaa;white-space:nowrap; }
+.linked-list { display:flex;flex-direction:column;gap:6px;width:100%; }
+.linked-item { display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f9f9f8;border-radius:8px;font-size:12px; }
+.linked-item .linked-remove { margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:13px;padding:0; }
+.linked-item .linked-remove:hover { color:#E24B4A; }
+.link-select { font-size:13px;padding:6px 8px;border:0.5px solid #d0d0ce;border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;flex:1; }
+.add-link-btn { background:transparent;border:0.5px solid #d0d0ce;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:#666;font-family:inherit;display:flex;align-items:center;gap:4px;white-space:nowrap; }
+.add-link-btn:hover { color:#1a1a18; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1><i class="ti ti-clipboard-list" style="font-size:20px;vertical-align:-2px;margin-right:6px"></i>Görev Takip</h1>
+    <span id="today-date" style="font-size:13px;color:#888"></span>
+  </div>
+  <div id="warning-band-area"></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Toplam</div><div class="stat-value" id="stat-total">0</div></div>
+    <div class="stat"><div class="stat-label">Devam eden</div><div class="stat-value" id="stat-devam">0</div></div>
+    <div class="stat"><div class="stat-label">Gecikmiş</div><div class="stat-value" id="stat-gec" style="color:#E24B4A">0</div></div>
+    <div class="stat"><div class="stat-label">Tamamlanan</div><div class="stat-value" id="stat-tamam">0</div></div>
+  </div>
+  <div class="form-card">
+    <div class="form-title" id="form-toggle">
+      <i class="ti ti-plus" style="font-size:16px"></i> Yeni görev ekle
+      <i class="ti ti-chevron-down" id="form-chevron" style="font-size:14px;margin-left:auto;transition:transform 0.2s"></i>
+    </div>
+    <div id="form-body">
+      <div class="form-grid full" style="margin-bottom:10px">
+        <div class="form-group"><label>Görev başlığı *</label><input type="text" id="f-baslik" placeholder="Görevi kısaca tanımla..." /></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Kaynak</label>
+          <select id="f-kaynak"><option value="E-posta">E-posta</option><option value="Toplantı">Toplantı</option><option value="Teams">Teams / Mesajlaşma</option><option value="Sözlü">Sözlü iletişim</option><option value="Diğer">Diğer</option></select>
+        </div>
+        <div class="form-group"><label>Birim / Kişi</label><input type="text" id="f-birim" placeholder="Üretim, Satış..." /></div>
+        <div class="form-group"><label>Öncelik</label>
+          <select id="f-oncelik"><option value="Yüksek">Yüksek</option><option value="Orta" selected>Orta</option><option value="Düşük">Düşük</option></select>
+        </div>
+        <div class="form-group"><label>Son tarih</label><input type="date" id="f-tarih" /></div>
+        <div class="form-group"><label>Tekrarlama</label>
+          <select id="f-tekrar"><option value="">Tekrar yok</option><option value="gunluk">Her gün</option><option value="haftalik">Her hafta</option><option value="aylik">Her ay</option></select>
+        </div>
+        <div class="form-group" id="f-tekrar-gun-wrap" style="display:none"><label>Hangi gün</label>
+          <select id="f-tekrar-gun"><option value="1">Pazartesi</option><option value="2">Salı</option><option value="3">Çarşamba</option><option value="4">Perşembe</option><option value="5">Cuma</option></select>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Etiketler <span style="font-weight:400;color:#aaa">(Enter ile ekle)</span></label>
+          <div class="tag-input-wrap" id="tag-input-wrap"><input type="text" id="f-tag-input" placeholder="etiket yaz..." /></div>
+        </div>
+      </div>
+      <div class="form-grid full" style="margin-top:10px">
+        <div class="form-group"><label>Not (isteğe bağlı)</label><textarea id="f-not" placeholder="Ek detaylar..."></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button class="export-btn" id="export-btn"><i class="ti ti-download" style="font-size:14px"></i>Dışa aktar</button>
+        <button class="btn-primary" id="btn-ekle"><i class="ti ti-plus" style="font-size:14px;vertical-align:-1px;margin-right:4px"></i>Görevi kaydet</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="gorevler"><i class="ti ti-list-check" style="font-size:15px"></i>Görevler <span class="tab-badge" id="tab-badge-gorev">0</span></button>
+    <button class="tab-btn" data-tab="cop"><i class="ti ti-trash" style="font-size:15px"></i>Çöp kutusu <span class="tab-badge" id="tab-badge-cop">0</span></button>
+  </div>
+  <div id="tab-gorevler">
+    <div class="filters">
+      <button class="filter-btn active" data-filter="tumu">Tümü</button>
+      <button class="filter-btn" data-filter="Bekliyor">Bekliyor</button>
+      <button class="filter-btn" data-filter="Devam Ediyor">Devam ediyor</button>
+      <button class="filter-btn" data-filter="Tamamlandı">Tamamlandı</button>
+      <input type="text" class="filter-search" id="search-input" placeholder="Ara..." />
+    </div>
+    <div class="task-list" id="task-list"></div>
+  </div>
+  <div id="tab-cop" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:13px;color:#888">Silinen görevler geri alınabilir.</span>
+      <button class="clear-all-btn" id="clear-all-btn"><i class="ti ti-trash-x" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>Tümünü sil</button>
+    </div>
+    <div class="task-list" id="trash-list"></div>
+  </div>
+</div>
+
+<!-- Detail Overlay -->
+<div class="overlay" id="detail-overlay">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div class="detail-header-title" id="dp-baslik"></div>
+      <button class="detail-close" id="detail-close"><i class="ti ti-x" style="font-size:16px"></i></button>
+    </div>
+    <div class="detail-row">
+      <span class="detail-row-label">Durum</span>
+      <div class="durum-btns">
+        <button class="durum-btn" data-durum="Bekliyor"><span class="dot dot-bekliyor"></span>Bekliyor</button>
+        <button class="durum-btn" data-durum="Devam Ediyor"><span class="dot dot-devam"></span>Devam ediyor</button>
+        <button class="durum-btn" data-durum="Tamamlandı"><span class="dot dot-tamam"></span>Tamamlandı</button>
+      </div>
+    </div>
+    <div class="detail-row"><span class="detail-row-label">Kaynak</span><span class="detail-row-val" id="dp-kaynak"></span></div>
+    <div class="detail-row"><span class="detail-row-label">Birim / Kişi</span><span class="detail-row-val" id="dp-birim"></span></div>
+    <div class="detail-row"><span class="detail-row-label">Öncelik</span><span class="detail-row-val" id="dp-oncelik"></span></div>
+    <div class="detail-row"><span class="detail-row-label">Son tarih</span><span class="detail-row-val" id="dp-tarih"></span></div>
+    <div class="detail-row"><span class="detail-row-label">Tekrarlama</span><span class="detail-row-val" id="dp-tekrar"></span></div>
+    <div class="detail-row"><span class="detail-row-label">Etiketler</span><div class="detail-row-val" id="dp-etiketler" style="display:flex;gap:5px;flex-wrap:wrap;"></div></div>
+    <div class="detail-row" style="flex-direction:column;gap:6px;"><span class="detail-row-label">Not</span><div class="detail-note" id="dp-not"></div></div>
+    <div class="detail-row" style="flex-direction:column;gap:8px;">
+      <span class="detail-row-label">Bağlı görevler</span>
+      <div class="linked-list" id="dp-linked"></div>
+      <div style="display:flex;gap:6px;align-items:center;width:100%">
+        <select class="link-select" id="link-select"><option value="">— Görev seç —</option></select>
+        <button class="add-link-btn" id="add-link-btn"><i class="ti ti-link" style="font-size:13px"></i>Bağla</button>
+      </div>
+    </div>
+    <div class="detail-row" style="flex-direction:column;gap:6px;"><span class="detail-row-label">Geçmiş</span><div class="history-list" id="dp-history"></div></div>
+    <div class="detail-actions">
+      <button class="detail-edit-btn" id="detail-edit-toggle"><i class="ti ti-pencil" style="font-size:13px"></i>Düzenle</button>
+      <button class="detail-del-btn" id="detail-del-btn"><i class="ti ti-trash" style="font-size:13px"></i>Sil</button>
+    </div>
+    <div class="edit-form" id="edit-form">
+      <div class="form-grid full"><div class="form-group"><label>Görev başlığı</label><input type="text" id="ef-baslik" /></div></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Kaynak</label><select id="ef-kaynak"><option value="E-posta">E-posta</option><option value="Toplantı">Toplantı</option><option value="Teams">Teams / Mesajlaşma</option><option value="Sözlü">Sözlü iletişim</option><option value="Diğer">Diğer</option></select></div>
+        <div class="form-group"><label>Birim / Kişi</label><input type="text" id="ef-birim" /></div>
+        <div class="form-group"><label>Öncelik</label><select id="ef-oncelik"><option value="Yüksek">Yüksek</option><option value="Orta">Orta</option><option value="Düşük">Düşük</option></select></div>
+        <div class="form-group"><label>Son tarih</label><input type="date" id="ef-tarih" /></div>
+        <div class="form-group"><label>Tekrarlama</label><select id="ef-tekrar"><option value="">Tekrar yok</option><option value="gunluk">Her gün</option><option value="haftalik">Her hafta</option><option value="aylik">Her ay</option></select></div>
+        <div class="form-group" id="ef-tekrar-gun-wrap" style="display:none"><label>Hangi gün</label><select id="ef-tekrar-gun"><option value="1">Pazartesi</option><option value="2">Salı</option><option value="3">Çarşamba</option><option value="4">Perşembe</option><option value="5">Cuma</option></select></div>
+      </div>
+      <div class="form-group"><label>Etiketler</label><div class="tag-input-wrap" id="ef-tag-wrap"><input type="text" id="ef-tag-input" placeholder="etiket yaz..." /></div></div>
+      <div class="form-grid full"><div class="form-group"><label>Not</label><textarea id="ef-not" style="min-height:70px"></textarea></div></div>
+      <button class="edit-save-btn" id="edit-save-btn">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TEKRAR_LABEL = { gunluk:'Her gün', haftalik:'Her hafta', aylik:'Her ay' };
+const GUN_LABEL = { '1':'Pazartesi','2':'Salı','3':'Çarşamba','4':'Perşembe','5':'Cuma' };
+
+let tasks = JSON.parse(localStorage.getItem('gorevler_v2') || '[]');
+let trash = JSON.parse(localStorage.getItem('gorevler_trash') || '[]');
+let activeFilter = 'tumu', searchQuery = '', formOpen = true, activeTab = 'gorevler';
+let detailId = null, editOpen = false, newTags = [], editTags = [];
+
+function save() { localStorage.setItem('gorevler_v2', JSON.stringify(tasks)); localStorage.setItem('gorevler_trash', JSON.stringify(trash)); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function formatDate(ds) { if (!ds) return '—'; const [y,m,d] = ds.split('-'); return d+'.'+m+'.'+y; }
+function isOverdue(t) { return t.tarih && t.durum !== 'Tamamlandı' && t.tarih < today(); }
+function isToday(t) { return t.tarih && t.durum !== 'Tamamlandı' && t.tarih === today(); }
+function isTomorrow(t) { if (!t.tarih||t.durum==='Tamamlandı') return false; const tom=new Date(); tom.setDate(tom.getDate()+1); return t.tarih===tom.toISOString().split('T')[0]; }
+function kaynak2badge(k) { return k==='E-posta'?'eposta':k==='Toplantı'?'toplanti':k==='Teams'?'teams':k==='Sözlü'?'sozlu':'diger'; }
+
+function nextTekrarDate(t) {
+  if (!t.tekrar||!t.tarih) return null;
+  const d=new Date(t.tarih);
+  if (t.tekrar==='gunluk') d.setDate(d.getDate()+1);
+  else if (t.tekrar==='haftalik') d.setDate(d.getDate()+7);
+  else if (t.tekrar==='aylik') d.setMonth(d.getMonth()+1);
+  return d.toISOString().split('T')[0];
+}
+
+function spawnTekrar(t) {
+  const next=nextTekrarDate(t); if (!next) return;
+  if (tasks.some(x=>x.parentId===t.id&&x.tarih===next)) return;
+  tasks.unshift({...t,id:Date.now().toString(),tarih:next,durum:'Bekliyor',olusturulma:today(),history:[{text:'Tekrarlayan görev oluşturuldu',date:today()}],parentId:t.id,links:[]});
+}
+
+function addHistory(task, text) { if (!task.history) task.history=[]; task.history.unshift({text,date:today()}); }
+
+function updateWarningBand() {
+  const area=document.getElementById('warning-band-area');
+  const ov=tasks.filter(t=>isOverdue(t)), td=tasks.filter(t=>isToday(t)), tom=tasks.filter(t=>isTomorrow(t));
+  let html='';
+  if (ov.length) html+=`<div class="warning-band danger"><i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0"></i><span><strong>${ov.length} görev gecikmiş!</strong> Lütfen kontrol et.</span></div>`;
+  if (td.length) html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${td.length} görevin</strong> son tarihi bugün.</span></div>`;
+  else if (tom.length) html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${tom.length} görevin</strong> son tarihi yarın.</span></div>`;
+  area.innerHTML=html;
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-devam').textContent=tasks.filter(t=>t.durum==='Devam Ediyor').length;
+  document.getElementById('stat-gec').textContent=tasks.filter(t=>isOverdue(t)).length;
+  document.getElementById('stat-tamam').textContent=tasks.filter(t=>t.durum==='Tamamlandı').length;
+  document.getElementById('tab-badge-gorev').textContent=tasks.length;
+  const tc=trash.length, tb=document.getElementById('tab-badge-cop');
+  tb.textContent=tc; tb.className='tab-badge'+(tc>0?' red':'');
+  updateWarningBand();
+}
+
+function deleteTask(id) {
+  const idx=tasks.findIndex(t=>t.id===id); if(idx===-1)return;
+  trash.unshift({...tasks[idx],deletedAt:today()}); tasks.splice(idx,1);
+  save(); render(); renderTrash(); closeDetail();
+}
+function restoreTask(id) {
+  const idx=trash.findIndex(t=>t.id===id); if(idx===-1)return;
+  const t={...trash[idx]}; delete t.deletedAt; tasks.unshift(t); trash.splice(idx,1);
+  save(); render(); renderTrash();
+}
+function permDelete(id) { trash=trash.filter(t=>t.id!==id); save(); renderTrash(); updateStats(); }
+function clearAll() { trash=[]; save(); renderTrash(); updateStats(); }
+
+function openDetail(id) {
+  detailId=id; editOpen=false;
+  document.getElementById('edit-form').classList.remove('open');
+  document.getElementById('detail-edit-toggle').innerHTML='<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
+  fillDetail();
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function fillDetail() {
+  const t=tasks.find(t=>t.id===detailId); if(!t)return;
+  document.getElementById('dp-baslik').textContent=t.baslik;
+  document.getElementById('dp-kaynak').textContent=t.kaynak;
+  document.getElementById('dp-birim').textContent=t.birim||'—';
+  document.getElementById('dp-oncelik').textContent=t.oncelik;
+  document.getElementById('dp-tarih').textContent=formatDate(t.tarih);
+  document.getElementById('dp-tekrar').textContent=t.tekrar?(TEKRAR_LABEL[t.tekrar]+(t.tekrar==='haftalik'&&t.tekrarGun?', '+GUN_LABEL[t.tekrarGun]:'')):' Yok';
+  const notEl=document.getElementById('dp-not');
+  if(t.not){notEl.textContent=t.not;notEl.className='detail-note';}else{notEl.textContent='Not eklenmemiş';notEl.className='detail-note empty-note';}
+  document.getElementById('dp-etiketler').innerHTML=(t.tags||[]).length?(t.tags||[]).map(tag=>`<span class="badge badge-tag">${tag}</span>`).join(''):'<span style="font-size:12px;color:#aaa">—</span>';
+  document.querySelectorAll('.durum-btn').forEach(b=>b.classList.toggle('selected',b.dataset.durum===t.durum));
+  const linkedEl=document.getElementById('dp-linked');
+  const links=t.links||[];
+  if(!links.length){linkedEl.innerHTML='<span style="font-size:12px;color:#aaa">Bağlı görev yok</span>';}
+  else{
+    linkedEl.innerHTML=links.map(lid=>{const lt=tasks.find(x=>x.id===lid);if(!lt)return'';const dk=lt.durum==='Bekliyor'?'bekliyor':lt.durum==='Devam Ediyor'?'devam':'tamamlandi';return`<div class="linked-item"><i class="ti ti-link" style="font-size:13px;color:#aaa;flex-shrink:0"></i><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lt.baslik}</span><span class="badge badge-durum-${dk}" style="flex-shrink:0">${lt.durum}</span><button class="linked-remove" data-lid="${lid}">×</button></div>`;}).join('');
+    linkedEl.querySelectorAll('.linked-remove').forEach(btn=>{btn.addEventListener('click',()=>{const t2=tasks.find(x=>x.id===detailId);if(!t2)return;t2.links=(t2.links||[]).filter(l=>l!==btn.dataset.lid);const t3=tasks.find(x=>x.id===btn.dataset.lid);if(t3)t3.links=(t3.links||[]).filter(l=>l!==detailId);save();fillDetail();});});
+  }
+  const sel=document.getElementById('link-select');
+  sel.innerHTML='<option value="">— Görev seç —</option>';
+  tasks.filter(x=>x.id!==detailId&&!(t.links||[]).includes(x.id)).forEach(x=>{const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.baslik.substring(0,40);sel.appendChild(opt);});
+  const hist=document.getElementById('dp-history');
+  if(!t.history||!t.history.length){hist.innerHTML='<span style="font-size:12px;color:#aaa">Henüz değişiklik yok</span>';}
+  else{hist.innerHTML=t.history.map(h=>`<div class="history-item"><div class="history-dot"></div><div class="history-text">${h.text}</div><div class="history-date">${formatDate(h.date)}</div></div>`).join('');}
+}
+
+function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); detailId=null; }
+document.getElementById('detail-close').addEventListener('click',closeDetail);
+document.getElementById('detail-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('detail-overlay'))closeDetail();});
+document.getElementById('detail-del-btn').addEventListener('click',()=>{if(detailId)deleteTask(detailId);});
+document.getElementById('add-link-btn').addEventListener('click',()=>{
+  const sel=document.getElementById('link-select'), lid=sel.value; if(!lid)return;
+  const t=tasks.find(t=>t.id===detailId); if(!t)return;
+  if(!(t.links||[]).includes(lid)){
+    if(!t.links)t.links=[];t.links.push(lid);
+    const t2=tasks.find(x=>x.id===lid);if(t2){if(!t2.links)t2.links=[];if(!t2.links.includes(detailId))t2.links.push(detailId);}
+    addHistory(t,`"${tasks.find(x=>x.id===lid)?.baslik}" görevi bağlandı`);
+    save();render();fillDetail();
+  }
+});
+document.querySelectorAll('.durum-btn').forEach(btn=>{btn.addEventListener('click',()=>{if(!detailId)return;const t=tasks.find(t=>t.id===detailId);if(t&&t.durum!==btn.dataset.durum){const prev=t.durum;t.durum=btn.dataset.durum;addHistory(t,`${prev} → ${t.durum}`);if(t.durum==='Tamamlandı'&&t.tekrar)spawnTekrar(t);save();render();fillDetail();}});});
+document.getElementById('detail-edit-toggle').addEventListener('click',()=>{
+  editOpen=!editOpen;
+  document.getElementById('edit-form').classList.toggle('open',editOpen);
+  document.getElementById('detail-edit-toggle').innerHTML=editOpen?'<i class="ti ti-x" style="font-size:13px"></i>İptal':'<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
+  if(editOpen){const t=tasks.find(t=>t.id===detailId);if(!t)return;document.getElementById('ef-baslik').value=t.baslik;document.getElementById('ef-kaynak').value=t.kaynak;document.getElementById('ef-birim').value=t.birim||'';document.getElementById('ef-oncelik').value=t.oncelik;document.getElementById('ef-tarih').value=t.tarih||'';document.getElementById('ef-not').value=t.not||'';document.getElementById('ef-tekrar').value=t.tekrar||'';document.getElementById('ef-tekrar-gun').value=t.tekrarGun||'1';document.getElementById('ef-tekrar-gun-wrap').style.display=t.tekrar==='haftalik'?'':'none';editTags=[...(t.tags||[])];renderEditTags();}
+});
+document.getElementById('ef-tekrar').addEventListener('change',e=>{document.getElementById('ef-tekrar-gun-wrap').style.display=e.target.value==='haftalik'?'':'none';});
+document.getElementById('f-tekrar').addEventListener('change',e=>{document.getElementById('f-tekrar-gun-wrap').style.display=e.target.value==='haftalik'?'':'none';});
+document.getElementById('edit-save-btn').addEventListener('click',()=>{
+  const t=tasks.find(t=>t.id===detailId);if(!t)return;
+  const changes=[];const nb=document.getElementById('ef-baslik').value.trim()||t.baslik;
+  if(nb!==t.baslik)changes.push('Başlık güncellendi');
+  if(document.getElementById('ef-oncelik').value!==t.oncelik)changes.push(`Öncelik: ${t.oncelik} → ${document.getElementById('ef-oncelik').value}`);
+  if(document.getElementById('ef-tarih').value!==(t.tarih||''))changes.push('Tarih güncellendi');
+  if(document.getElementById('ef-tekrar').value!==(t.tekrar||''))changes.push('Tekrarlama güncellendi');
+  t.baslik=nb;t.kaynak=document.getElementById('ef-kaynak').value;t.birim=document.getElementById('ef-birim').value.trim();t.oncelik=document.getElementById('ef-oncelik').value;t.tarih=document.getElementById('ef-tarih').value;t.not=document.getElementById('ef-not').value.trim();t.tags=[...editTags];t.tekrar=document.getElementById('ef-tekrar').value||'';t.tekrarGun=t.tekrar==='haftalik'?document.getElementById('ef-tekrar-gun').value:'';
+  if(changes.length)changes.forEach(c=>addHistory(t,c));
+  save();render();fillDetail();editOpen=false;document.getElementById('edit-form').classList.remove('open');document.getElementById('detail-edit-toggle').innerHTML='<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
+});
+
+function renderNewTags(){const wrap=document.getElementById('tag-input-wrap'),inp=document.getElementById('f-tag-input');wrap.innerHTML='';newTags.forEach((tag,i)=>{const p=document.createElement('span');p.className='tag-pill';p.innerHTML=`${tag}<button type="button">×</button>`;p.querySelector('button').addEventListener('click',()=>{newTags.splice(i,1);renderNewTags();});wrap.appendChild(p);});wrap.appendChild(inp);}
+function renderEditTags(){const wrap=document.getElementById('ef-tag-wrap'),inp=document.getElementById('ef-tag-input');wrap.innerHTML='';editTags.forEach((tag,i)=>{const p=document.createElement('span');p.className='tag-pill';p.innerHTML=`${tag}<button type="button">×</button>`;p.querySelector('button').addEventListener('click',()=>{editTags.splice(i,1);renderEditTags();});wrap.appendChild(p);});wrap.appendChild(inp);}
+document.getElementById('f-tag-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value.trim();if(v&&!newTags.includes(v)){newTags.push(v);renderNewTags();e.target.value='';}}}); 
+document.getElementById('ef-tag-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value.trim();if(v&&!editTags.includes(v)){editTags.push(v);renderEditTags();e.target.value='';}}}); 
+document.getElementById('tag-input-wrap').addEventListener('click',()=>document.getElementById('f-tag-input').focus());
+document.getElementById('ef-tag-wrap').addEventListener('click',()=>document.getElementById('ef-tag-input').focus());
+
+document.getElementById('export-btn').addEventListener('click',()=>{
+  const header=['#','Başlık','Durum','Kaynak','Birim','Öncelik','Son Tarih','Tekrarlama','Etiketler','Not','Oluşturulma'];
+  const rows=tasks.map((t,i)=>[i+1,t.baslik,t.durum,t.kaynak,t.birim||'',t.oncelik,t.tarih?formatDate(t.tarih):'',t.tekrar?TEKRAR_LABEL[t.tekrar]:'',(t.tags||[]).join('; '),(t.not||'').replace(/\n/g,' '),formatDate(t.olusturulma)]);
+  const csv=[header,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gorevler.csv';a.click();URL.revokeObjectURL(url);
+});
+
+function render() {
+  updateStats();
+  const list=document.getElementById('task-list');
+  let filtered=tasks.filter(t=>{
+    if(activeFilter!=='tumu'&&t.durum!==activeFilter)return false;
+    if(searchQuery){const q=searchQuery.toLowerCase();return t.baslik.toLowerCase().includes(q)||(t.birim||'').toLowerCase().includes(q)||(t.tags||[]).some(tag=>tag.toLowerCase().includes(q));}
+    return true;
+  });
+  if(!filtered.length){list.innerHTML='<div class="empty"><i class="ti ti-clipboard-check" style="font-size:28px;display:block;margin:0 auto 8px"></i>Görev yok</div>';return;}
+  const pending=filtered.filter(t=>t.durum!=='Tamamlandı');
+  const done=filtered.filter(t=>t.durum==='Tamamlandı');
+  pending.sort((a,b)=>{if(isOverdue(a)&&!isOverdue(b))return -1;if(!isOverdue(a)&&isOverdue(b))return 1;const op={Yüksek:0,Orta:1,Düşük:2};return(op[a.oncelik]||1)-(op[b.oncelik]||1);});
+  let html=pending.map((t,i)=>taskHTML(t,i+1)).join('');
+  if(done.length){html+=`<div class="section-divider"><span>Tamamlananlar (${done.length})</span></div>`;html+=done.map((t,i)=>taskHTML(t,pending.length+i+1)).join('');}
+  list.innerHTML=html;
+  list.querySelectorAll('.task-card').forEach(card=>{card.addEventListener('click',()=>openDetail(card.dataset.id));});
+  list.querySelectorAll('.delete-btn').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();deleteTask(btn.dataset.id);});});
+}
+
+function renderTrash() {
+  updateStats();
+  const list=document.getElementById('trash-list');
+  if(!trash.length){list.innerHTML='<div class="empty"><i class="ti ti-trash" style="font-size:28px;display:block;margin:0 auto 8px"></i>Çöp kutusu boş</div>';return;}
+  list.innerHTML=trash.map((t,i)=>trashHTML(t,i+1)).join('');
+  list.querySelectorAll('.restore-btn').forEach(btn=>{btn.addEventListener('click',()=>restoreTask(btn.dataset.id));});
+  list.querySelectorAll('.perm-del-btn').forEach(btn=>{btn.addEventListener('click',()=>permDelete(btn.dataset.id));});
+}
+
+function taskHTML(t,num){
+  const overdue=isOverdue(t),done=t.durum==='Tamamlandı';
+  const op=t.oncelik==='Yüksek'?'yuksek':t.oncelik==='Orta'?'orta':'dusuk';
+  const dk=t.durum==='Bekliyor'?'bekliyor':t.durum==='Devam Ediyor'?'devam':'tamamlandi';
+  const kb=kaynak2badge(t.kaynak);
+  const tagBadges=(t.tags||[]).map(tag=>`<span class="badge badge-tag">${tag}</span>`).join('');
+  const tekrarBadge=t.tekrar?`<span class="badge badge-tekrar"><i class="ti ti-refresh" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>${TEKRAR_LABEL[t.tekrar]}</span>`:'';
+  const linkedBadge=(t.links||[]).length?`<span class="badge badge-linked"><i class="ti ti-link" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>${t.links.length} bağlantı</span>`:'';
+  const hasNote=t.not?`<i class="ti ti-note" style="font-size:12px;color:#aaa"></i>`:'';
+  return `<div class="task-card ${overdue?'overdue':''} ${done?'done':''}" data-id="${t.id}">
+    <div class="task-num">#${num}</div>
+    <div class="task-body">
+      <div class="task-title ${done?'done-text':''}">${t.baslik}</div>
+      <div class="task-meta"><span class="badge badge-${kb}">${t.kaynak}</span>${t.birim?`<span class="badge badge-birim">${t.birim}</span>`:''}<span class="badge badge-oncelik-${op}">${t.oncelik}</span><span class="badge badge-durum-${dk}">${t.durum}</span>${tagBadges}${tekrarBadge}${linkedBadge}${hasNote}</div>
+    </div>
+    <div class="task-right">
+      ${t.tarih?`<div class="task-date ${overdue?'overdue-text':''}">${overdue?'⚠ ':''}${formatDate(t.tarih)}</div>`:''}
+      <button class="delete-btn" data-id="${t.id}"><i class="ti ti-trash" style="font-size:15px"></i></button>
+    </div>
+  </div>`;
+}
+
+function trashHTML(t,num){
+  const kb=kaynak2badge(t.kaynak),op=t.oncelik==='Yüksek'?'yuksek':t.oncelik==='Orta'?'orta':'dusuk';
+  return `<div class="task-card trash-card done" data-id="${t.id}">
+    <div class="task-num">#${num}</div>
+    <div class="task-body"><div class="task-title done-text">${t.baslik}</div>
+      <div class="task-meta"><span class="badge badge-${kb}">${t.kaynak}</span>${t.birim?`<span class="badge badge-birim">${t.birim}</span>`:''}<span class="badge badge-oncelik-${op}">${t.oncelik}</span>${t.deletedAt?`<span style="font-size:11px;color:#aaa">Silindi: ${formatDate(t.deletedAt)}</span>`:''}</div>
+    </div>
+    <div class="task-right"><div class="trash-actions"><button class="restore-btn" data-id="${t.id}"><i class="ti ti-restore" style="font-size:13px"></i> Geri al</button><button class="perm-del-btn" data-id="${t.id}"><i class="ti ti-x" style="font-size:14px"></i></button></div></div>
+  </div>`;
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeTab=btn.dataset.tab;document.getElementById('tab-gorevler').style.display=activeTab==='gorevler'?'':'none';document.getElementById('tab-cop').style.display=activeTab==='cop'?'':'none';if(activeTab==='cop')renderTrash();});});
+document.getElementById('clear-all-btn').addEventListener('click',clearAll);
+document.getElementById('btn-ekle').addEventListener('click',()=>{
+  const baslik=document.getElementById('f-baslik').value.trim();if(!baslik){document.getElementById('f-baslik').focus();return;}
+  const tekrar=document.getElementById('f-tekrar').value;
+  tasks.unshift({id:Date.now().toString(),baslik,kaynak:document.getElementById('f-kaynak').value,birim:document.getElementById('f-birim').value.trim(),oncelik:document.getElementById('f-oncelik').value,tarih:document.getElementById('f-tarih').value,not:document.getElementById('f-not').value.trim(),tags:[...newTags],tekrar,tekrarGun:tekrar==='haftalik'?document.getElementById('f-tekrar-gun').value:'',durum:'Bekliyor',olusturulma:today(),history:[{text:'Görev oluşturuldu',date:today()}],links:[]});
+  newTags=[];save();['f-baslik','f-birim','f-not','f-tarih'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-tekrar').value='';document.getElementById('f-tekrar-gun-wrap').style.display='none';renderNewTags();render();
+});
+document.getElementById('form-toggle').addEventListener('click',()=>{formOpen=!formOpen;document.getElementById('form-body').style.display=formOpen?'':'none';document.getElementById('form-chevron').style.transform=formOpen?'':'rotate(-90deg)';});
+document.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;render();});});
+document.getElementById('search-input').addEventListener('input',e=>{searchQuery=e.target.value;render();});
+document.getElementById('today-date').textContent=new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+render();
+</script>
+</body>
+</html>
