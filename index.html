@@ -11,6 +11,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem; }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .header h1 { font-size: 20px; font-weight: 500; }
+.sync-status { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; }
+.sync-dot.green { background: #639922; }
+.sync-dot.red { background: #E24B4A; }
+.sync-dot.yellow { background: #EF9F27; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .warning-band { border-radius: 8px; padding: 8px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .warning-band.danger { background: #FCEBEB; border: 0.5px solid #E24B4A; color: #501313; }
 .warning-band.warn { background: #FAEEDA; border: 0.5px solid #EF9F27; color: #412402; }
@@ -58,21 +64,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .task-title.done-text { text-decoration: line-through; color: #aaa; }
 .task-meta { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
 .badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 400; }
-.badge-eposta { background:#E6F1FB;color:#0C447C; }
-.badge-toplanti { background:#EEEDFE;color:#3C3489; }
-.badge-teams { background:#E1F5EE;color:#085041; }
-.badge-sozlu { background:#FAEEDA;color:#633806; }
-.badge-diger { background:#F1EFE8;color:#444441; }
-.badge-birim { background:#FBEAF0;color:#72243E; }
-.badge-oncelik-yuksek { background:#FCEBEB;color:#791F1F; }
-.badge-oncelik-orta { background:#FAEEDA;color:#633806; }
-.badge-oncelik-dusuk { background:#EAF3DE;color:#27500A; }
-.badge-durum-bekliyor { background:#F1EFE8;color:#444441; }
-.badge-durum-devam { background:#E6F1FB;color:#0C447C; }
-.badge-durum-tamamlandi { background:#EAF3DE;color:#27500A; }
-.badge-tag { background:#EEEDFE;color:#3C3489; }
-.badge-tekrar { background:#FDF3FC;color:#6B2A6B; }
-.badge-linked { background:#E8F6FB;color:#0A4A60; }
+.badge-eposta{background:#E6F1FB;color:#0C447C}.badge-toplanti{background:#EEEDFE;color:#3C3489}.badge-teams{background:#E1F5EE;color:#085041}.badge-sozlu{background:#FAEEDA;color:#633806}.badge-diger{background:#F1EFE8;color:#444441}.badge-birim{background:#FBEAF0;color:#72243E}.badge-oncelik-yuksek{background:#FCEBEB;color:#791F1F}.badge-oncelik-orta{background:#FAEEDA;color:#633806}.badge-oncelik-dusuk{background:#EAF3DE;color:#27500A}.badge-durum-bekliyor{background:#F1EFE8;color:#444441}.badge-durum-devam{background:#E6F1FB;color:#0C447C}.badge-durum-tamamlandi{background:#EAF3DE;color:#27500A}.badge-tag{background:#EEEDFE;color:#3C3489}.badge-tekrar{background:#FDF3FC;color:#6B2A6B}.badge-linked{background:#E8F6FB;color:#0A4A60}
 .task-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
 .task-date { font-size: 12px; color: #aaa; white-space: nowrap; }
 .task-date.overdue-text { color: #E24B4A; }
@@ -128,13 +120,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .link-select { font-size:13px;padding:6px 8px;border:0.5px solid #d0d0ce;border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;flex:1; }
 .add-link-btn { background:transparent;border:0.5px solid #d0d0ce;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:#666;font-family:inherit;display:flex;align-items:center;gap:4px;white-space:nowrap; }
 .add-link-btn:hover { color:#1a1a18; }
+.loading { text-align:center;padding:3rem 0;color:#aaa;font-size:14px; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <h1><i class="ti ti-clipboard-list" style="font-size:20px;vertical-align:-2px;margin-right:6px"></i>Görev Takip</h1>
-    <span id="today-date" style="font-size:13px;color:#888"></span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-text">Bağlanıyor...</span></div>
+      <span id="today-date" style="font-size:13px;color:#888"></span>
+    </div>
   </div>
   <div id="warning-band-area"></div>
   <div class="stats">
@@ -195,7 +191,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <button class="filter-btn" data-filter="Tamamlandı">Tamamlandı</button>
       <input type="text" class="filter-search" id="search-input" placeholder="Ara..." />
     </div>
-    <div class="task-list" id="task-list"></div>
+    <div class="task-list" id="task-list"><div class="loading"><i class="ti ti-loader" style="font-size:24px;display:block;margin:0 auto 8px"></i>Yükleniyor...</div></div>
   </div>
   <div id="tab-cop" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -206,7 +202,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
-<!-- Detail Overlay -->
 <div class="overlay" id="detail-overlay">
   <div class="detail-panel">
     <div class="detail-header">
@@ -259,83 +254,170 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 </div>
 
 <script>
+const SUPABASE_URL = 'https://xhhtotxyxdtoamyszkly.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaHRvdHh5eGR0b2FteXN6a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NTk2NTUsImV4cCI6MjA5NjEzNTY1NX0.kMviX3IulwZaOwCmKMUj7nCuft_Vxv98OBHHqWXGYk4';
+
 const TEKRAR_LABEL = { gunluk:'Her gün', haftalik:'Her hafta', aylik:'Her ay' };
 const GUN_LABEL = { '1':'Pazartesi','2':'Salı','3':'Çarşamba','4':'Perşembe','5':'Cuma' };
 
-let tasks = JSON.parse(localStorage.getItem('gorevler_v2') || '[]');
-let trash = JSON.parse(localStorage.getItem('gorevler_trash') || '[]');
-let activeFilter = 'tumu', searchQuery = '', formOpen = true, activeTab = 'gorevler';
-let detailId = null, editOpen = false, newTags = [], editTags = [];
+let tasks = [], trash = [];
+let activeFilter='tumu', searchQuery='', formOpen=true, activeTab='gorevler';
+let detailId=null, editOpen=false, newTags=[], editTags=[];
 
-function save() { localStorage.setItem('gorevler_v2', JSON.stringify(tasks)); localStorage.setItem('gorevler_trash', JSON.stringify(trash)); }
+function setSyncStatus(state) {
+  const dot=document.getElementById('sync-dot'), text=document.getElementById('sync-text');
+  if(state==='ok'){dot.className='sync-dot green';text.textContent='Senkronize';}
+  else if(state==='saving'){dot.className='sync-dot yellow';text.textContent='Kaydediliyor...';}
+  else if(state==='error'){dot.className='sync-dot red';text.textContent='Bağlantı hatası';}
+  else{dot.className='sync-dot';text.textContent='Bağlanıyor...';}
+}
+
+async function sbFetch(path, options={}) {
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
+    ...options,
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal', ...(options.headers||{}) }
+  });
+  if (!res.ok) { const err=await res.text(); throw new Error(err); }
+  if (res.status===204||res.headers.get('content-length')==='0') return null;
+  return res.json();
+}
+
+async function loadData() {
+  try {
+    setSyncStatus('connecting');
+    const [rows, copRows] = await Promise.all([
+      sbFetch('gorevler?order=created_at.desc', {headers:{'Accept':'application/json'}}),
+      sbFetch('cop?order=deleted_at.desc', {headers:{'Accept':'application/json'}})
+    ]);
+    tasks = (rows||[]).map(r=>r.data);
+    trash = (copRows||[]).map(r=>r.data);
+    setSyncStatus('ok');
+    render(); renderTrash();
+  } catch(e) {
+    setSyncStatus('error');
+    console.error(e);
+  }
+}
+
+async function saveTask(task) {
+  setSyncStatus('saving');
+  try {
+    await sbFetch('gorevler', { method:'POST', body: JSON.stringify({id:task.id, data:task}), headers:{'Prefer':'resolution=merge-duplicates'} });
+    setSyncStatus('ok');
+  } catch(e) { setSyncStatus('error'); console.error(e); }
+}
+
+async function deleteTaskFromDB(id) {
+  setSyncStatus('saving');
+  try {
+    await sbFetch('gorevler?id=eq.'+id, {method:'DELETE'});
+    setSyncStatus('ok');
+  } catch(e) { setSyncStatus('error'); console.error(e); }
+}
+
+async function saveTrashItem(item) {
+  setSyncStatus('saving');
+  try {
+    await sbFetch('cop', { method:'POST', body: JSON.stringify({id:item.id, data:item}), headers:{'Prefer':'resolution=merge-duplicates'} });
+    setSyncStatus('ok');
+  } catch(e) { setSyncStatus('error'); console.error(e); }
+}
+
+async function deleteTrashFromDB(id) {
+  setSyncStatus('saving');
+  try {
+    await sbFetch('cop?id=eq.'+id, {method:'DELETE'});
+    setSyncStatus('ok');
+  } catch(e) { setSyncStatus('error'); console.error(e); }
+}
+
 function today() { return new Date().toISOString().split('T')[0]; }
-function formatDate(ds) { if (!ds) return '—'; const [y,m,d] = ds.split('-'); return d+'.'+m+'.'+y; }
-function isOverdue(t) { return t.tarih && t.durum !== 'Tamamlandı' && t.tarih < today(); }
-function isToday(t) { return t.tarih && t.durum !== 'Tamamlandı' && t.tarih === today(); }
-function isTomorrow(t) { if (!t.tarih||t.durum==='Tamamlandı') return false; const tom=new Date(); tom.setDate(tom.getDate()+1); return t.tarih===tom.toISOString().split('T')[0]; }
+function formatDate(ds) { if(!ds)return'—';const[y,m,d]=ds.split('-');return d+'.'+m+'.'+y; }
+function isOverdue(t) { return t.tarih&&t.durum!=='Tamamlandı'&&t.tarih<today(); }
+function isToday(t) { return t.tarih&&t.durum!=='Tamamlandı'&&t.tarih===today(); }
+function isTomorrow(t) { if(!t.tarih||t.durum==='Tamamlandı')return false;const tom=new Date();tom.setDate(tom.getDate()+1);return t.tarih===tom.toISOString().split('T')[0]; }
 function kaynak2badge(k) { return k==='E-posta'?'eposta':k==='Toplantı'?'toplanti':k==='Teams'?'teams':k==='Sözlü'?'sozlu':'diger'; }
 
 function nextTekrarDate(t) {
-  if (!t.tekrar||!t.tarih) return null;
+  if(!t.tekrar||!t.tarih)return null;
   const d=new Date(t.tarih);
-  if (t.tekrar==='gunluk') d.setDate(d.getDate()+1);
-  else if (t.tekrar==='haftalik') d.setDate(d.getDate()+7);
-  else if (t.tekrar==='aylik') d.setMonth(d.getMonth()+1);
+  if(t.tekrar==='gunluk')d.setDate(d.getDate()+1);
+  else if(t.tekrar==='haftalik')d.setDate(d.getDate()+7);
+  else if(t.tekrar==='aylik')d.setMonth(d.getMonth()+1);
   return d.toISOString().split('T')[0];
 }
 
-function spawnTekrar(t) {
-  const next=nextTekrarDate(t); if (!next) return;
-  if (tasks.some(x=>x.parentId===t.id&&x.tarih===next)) return;
-  tasks.unshift({...t,id:Date.now().toString(),tarih:next,durum:'Bekliyor',olusturulma:today(),history:[{text:'Tekrarlayan görev oluşturuldu',date:today()}],parentId:t.id,links:[]});
+async function spawnTekrar(t) {
+  const next=nextTekrarDate(t);if(!next)return;
+  if(tasks.some(x=>x.parentId===t.id&&x.tarih===next))return;
+  const copy={...t,id:Date.now().toString(),tarih:next,durum:'Bekliyor',olusturulma:today(),history:[{text:'Tekrarlayan görev oluşturuldu',date:today()}],parentId:t.id,links:[]};
+  tasks.unshift(copy);
+  await saveTask(copy);
 }
 
-function addHistory(task, text) { if (!task.history) task.history=[]; task.history.unshift({text,date:today()}); }
+function addHistory(task,text){if(!task.history)task.history=[];task.history.unshift({text,date:today()});}
 
-function updateWarningBand() {
+function updateWarningBand(){
   const area=document.getElementById('warning-band-area');
-  const ov=tasks.filter(t=>isOverdue(t)), td=tasks.filter(t=>isToday(t)), tom=tasks.filter(t=>isTomorrow(t));
+  const ov=tasks.filter(t=>isOverdue(t)),td=tasks.filter(t=>isToday(t)),tom=tasks.filter(t=>isTomorrow(t));
   let html='';
-  if (ov.length) html+=`<div class="warning-band danger"><i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0"></i><span><strong>${ov.length} görev gecikmiş!</strong> Lütfen kontrol et.</span></div>`;
-  if (td.length) html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${td.length} görevin</strong> son tarihi bugün.</span></div>`;
-  else if (tom.length) html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${tom.length} görevin</strong> son tarihi yarın.</span></div>`;
+  if(ov.length)html+=`<div class="warning-band danger"><i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0"></i><span><strong>${ov.length} görev gecikmiş!</strong> Lütfen kontrol et.</span></div>`;
+  if(td.length)html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${td.length} görevin</strong> son tarihi bugün.</span></div>`;
+  else if(tom.length)html+=`<div class="warning-band warn"><i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i><span><strong>${tom.length} görevin</strong> son tarihi yarın.</span></div>`;
   area.innerHTML=html;
 }
 
-function updateStats() {
+function updateStats(){
   document.getElementById('stat-total').textContent=tasks.length;
   document.getElementById('stat-devam').textContent=tasks.filter(t=>t.durum==='Devam Ediyor').length;
   document.getElementById('stat-gec').textContent=tasks.filter(t=>isOverdue(t)).length;
   document.getElementById('stat-tamam').textContent=tasks.filter(t=>t.durum==='Tamamlandı').length;
   document.getElementById('tab-badge-gorev').textContent=tasks.length;
-  const tc=trash.length, tb=document.getElementById('tab-badge-cop');
-  tb.textContent=tc; tb.className='tab-badge'+(tc>0?' red':'');
+  const tc=trash.length,tb=document.getElementById('tab-badge-cop');
+  tb.textContent=tc;tb.className='tab-badge'+(tc>0?' red':'');
   updateWarningBand();
 }
 
-function deleteTask(id) {
-  const idx=tasks.findIndex(t=>t.id===id); if(idx===-1)return;
-  trash.unshift({...tasks[idx],deletedAt:today()}); tasks.splice(idx,1);
-  save(); render(); renderTrash(); closeDetail();
+async function deleteTask(id){
+  const idx=tasks.findIndex(t=>t.id===id);if(idx===-1)return;
+  const item={...tasks[idx],deletedAt:today()};
+  trash.unshift(item);tasks.splice(idx,1);
+  render();renderTrash();closeDetail();
+  await deleteTaskFromDB(id);
+  await saveTrashItem(item);
 }
-function restoreTask(id) {
-  const idx=trash.findIndex(t=>t.id===id); if(idx===-1)return;
-  const t={...trash[idx]}; delete t.deletedAt; tasks.unshift(t); trash.splice(idx,1);
-  save(); render(); renderTrash();
-}
-function permDelete(id) { trash=trash.filter(t=>t.id!==id); save(); renderTrash(); updateStats(); }
-function clearAll() { trash=[]; save(); renderTrash(); updateStats(); }
 
-function openDetail(id) {
-  detailId=id; editOpen=false;
+async function restoreTask(id){
+  const idx=trash.findIndex(t=>t.id===id);if(idx===-1)return;
+  const t={...trash[idx]};delete t.deletedAt;
+  tasks.unshift(t);trash.splice(idx,1);
+  render();renderTrash();
+  await saveTask(t);
+  await deleteTrashFromDB(id);
+}
+
+async function permDelete(id){
+  trash=trash.filter(t=>t.id!==id);
+  renderTrash();updateStats();
+  await deleteTrashFromDB(id);
+}
+
+async function clearAll(){
+  const ids=trash.map(t=>t.id);
+  trash=[];renderTrash();updateStats();
+  for(const id of ids) await deleteTrashFromDB(id);
+}
+
+function openDetail(id){
+  detailId=id;editOpen=false;
   document.getElementById('edit-form').classList.remove('open');
   document.getElementById('detail-edit-toggle').innerHTML='<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
   fillDetail();
   document.getElementById('detail-overlay').classList.add('open');
 }
 
-function fillDetail() {
-  const t=tasks.find(t=>t.id===detailId); if(!t)return;
+function fillDetail(){
+  const t=tasks.find(t=>t.id===detailId);if(!t)return;
   document.getElementById('dp-baslik').textContent=t.baslik;
   document.getElementById('dp-kaynak').textContent=t.kaynak;
   document.getElementById('dp-birim').textContent=t.birim||'—';
@@ -351,7 +433,7 @@ function fillDetail() {
   if(!links.length){linkedEl.innerHTML='<span style="font-size:12px;color:#aaa">Bağlı görev yok</span>';}
   else{
     linkedEl.innerHTML=links.map(lid=>{const lt=tasks.find(x=>x.id===lid);if(!lt)return'';const dk=lt.durum==='Bekliyor'?'bekliyor':lt.durum==='Devam Ediyor'?'devam':'tamamlandi';return`<div class="linked-item"><i class="ti ti-link" style="font-size:13px;color:#aaa;flex-shrink:0"></i><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lt.baslik}</span><span class="badge badge-durum-${dk}" style="flex-shrink:0">${lt.durum}</span><button class="linked-remove" data-lid="${lid}">×</button></div>`;}).join('');
-    linkedEl.querySelectorAll('.linked-remove').forEach(btn=>{btn.addEventListener('click',()=>{const t2=tasks.find(x=>x.id===detailId);if(!t2)return;t2.links=(t2.links||[]).filter(l=>l!==btn.dataset.lid);const t3=tasks.find(x=>x.id===btn.dataset.lid);if(t3)t3.links=(t3.links||[]).filter(l=>l!==detailId);save();fillDetail();});});
+    linkedEl.querySelectorAll('.linked-remove').forEach(btn=>{btn.addEventListener('click',async()=>{const t2=tasks.find(x=>x.id===detailId);if(!t2)return;t2.links=(t2.links||[]).filter(l=>l!==btn.dataset.lid);const t3=tasks.find(x=>x.id===btn.dataset.lid);if(t3)t3.links=(t3.links||[]).filter(l=>l!==detailId);fillDetail();await saveTask(t2);if(t3)await saveTask(t3);});});
   }
   const sel=document.getElementById('link-select');
   sel.innerHTML='<option value="">— Görev seç —</option>';
@@ -361,30 +443,36 @@ function fillDetail() {
   else{hist.innerHTML=t.history.map(h=>`<div class="history-item"><div class="history-dot"></div><div class="history-text">${h.text}</div><div class="history-date">${formatDate(h.date)}</div></div>`).join('');}
 }
 
-function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); detailId=null; }
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');detailId=null;}
 document.getElementById('detail-close').addEventListener('click',closeDetail);
 document.getElementById('detail-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('detail-overlay'))closeDetail();});
 document.getElementById('detail-del-btn').addEventListener('click',()=>{if(detailId)deleteTask(detailId);});
-document.getElementById('add-link-btn').addEventListener('click',()=>{
-  const sel=document.getElementById('link-select'), lid=sel.value; if(!lid)return;
-  const t=tasks.find(t=>t.id===detailId); if(!t)return;
+
+document.getElementById('add-link-btn').addEventListener('click',async()=>{
+  const sel=document.getElementById('link-select'),lid=sel.value;if(!lid)return;
+  const t=tasks.find(t=>t.id===detailId);if(!t)return;
   if(!(t.links||[]).includes(lid)){
     if(!t.links)t.links=[];t.links.push(lid);
     const t2=tasks.find(x=>x.id===lid);if(t2){if(!t2.links)t2.links=[];if(!t2.links.includes(detailId))t2.links.push(detailId);}
     addHistory(t,`"${tasks.find(x=>x.id===lid)?.baslik}" görevi bağlandı`);
-    save();render();fillDetail();
+    render();fillDetail();
+    await saveTask(t);if(t2)await saveTask(t2);
   }
 });
-document.querySelectorAll('.durum-btn').forEach(btn=>{btn.addEventListener('click',()=>{if(!detailId)return;const t=tasks.find(t=>t.id===detailId);if(t&&t.durum!==btn.dataset.durum){const prev=t.durum;t.durum=btn.dataset.durum;addHistory(t,`${prev} → ${t.durum}`);if(t.durum==='Tamamlandı'&&t.tekrar)spawnTekrar(t);save();render();fillDetail();}});});
+
+document.querySelectorAll('.durum-btn').forEach(btn=>{btn.addEventListener('click',async()=>{if(!detailId)return;const t=tasks.find(t=>t.id===detailId);if(t&&t.durum!==btn.dataset.durum){const prev=t.durum;t.durum=btn.dataset.durum;addHistory(t,`${prev} → ${t.durum}`);if(t.durum==='Tamamlandı'&&t.tekrar)await spawnTekrar(t);render();fillDetail();await saveTask(t);}});});
+
 document.getElementById('detail-edit-toggle').addEventListener('click',()=>{
   editOpen=!editOpen;
   document.getElementById('edit-form').classList.toggle('open',editOpen);
   document.getElementById('detail-edit-toggle').innerHTML=editOpen?'<i class="ti ti-x" style="font-size:13px"></i>İptal':'<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
   if(editOpen){const t=tasks.find(t=>t.id===detailId);if(!t)return;document.getElementById('ef-baslik').value=t.baslik;document.getElementById('ef-kaynak').value=t.kaynak;document.getElementById('ef-birim').value=t.birim||'';document.getElementById('ef-oncelik').value=t.oncelik;document.getElementById('ef-tarih').value=t.tarih||'';document.getElementById('ef-not').value=t.not||'';document.getElementById('ef-tekrar').value=t.tekrar||'';document.getElementById('ef-tekrar-gun').value=t.tekrarGun||'1';document.getElementById('ef-tekrar-gun-wrap').style.display=t.tekrar==='haftalik'?'':'none';editTags=[...(t.tags||[])];renderEditTags();}
 });
+
 document.getElementById('ef-tekrar').addEventListener('change',e=>{document.getElementById('ef-tekrar-gun-wrap').style.display=e.target.value==='haftalik'?'':'none';});
 document.getElementById('f-tekrar').addEventListener('change',e=>{document.getElementById('f-tekrar-gun-wrap').style.display=e.target.value==='haftalik'?'':'none';});
-document.getElementById('edit-save-btn').addEventListener('click',()=>{
+
+document.getElementById('edit-save-btn').addEventListener('click',async()=>{
   const t=tasks.find(t=>t.id===detailId);if(!t)return;
   const changes=[];const nb=document.getElementById('ef-baslik').value.trim()||t.baslik;
   if(nb!==t.baslik)changes.push('Başlık güncellendi');
@@ -393,7 +481,8 @@ document.getElementById('edit-save-btn').addEventListener('click',()=>{
   if(document.getElementById('ef-tekrar').value!==(t.tekrar||''))changes.push('Tekrarlama güncellendi');
   t.baslik=nb;t.kaynak=document.getElementById('ef-kaynak').value;t.birim=document.getElementById('ef-birim').value.trim();t.oncelik=document.getElementById('ef-oncelik').value;t.tarih=document.getElementById('ef-tarih').value;t.not=document.getElementById('ef-not').value.trim();t.tags=[...editTags];t.tekrar=document.getElementById('ef-tekrar').value||'';t.tekrarGun=t.tekrar==='haftalik'?document.getElementById('ef-tekrar-gun').value:'';
   if(changes.length)changes.forEach(c=>addHistory(t,c));
-  save();render();fillDetail();editOpen=false;document.getElementById('edit-form').classList.remove('open');document.getElementById('detail-edit-toggle').innerHTML='<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
+  render();fillDetail();editOpen=false;document.getElementById('edit-form').classList.remove('open');document.getElementById('detail-edit-toggle').innerHTML='<i class="ti ti-pencil" style="font-size:13px"></i>Düzenle';
+  await saveTask(t);
 });
 
 function renderNewTags(){const wrap=document.getElementById('tag-input-wrap'),inp=document.getElementById('f-tag-input');wrap.innerHTML='';newTags.forEach((tag,i)=>{const p=document.createElement('span');p.className='tag-pill';p.innerHTML=`${tag}<button type="button">×</button>`;p.querySelector('button').addEventListener('click',()=>{newTags.splice(i,1);renderNewTags();});wrap.appendChild(p);});wrap.appendChild(inp);}
@@ -411,7 +500,7 @@ document.getElementById('export-btn').addEventListener('click',()=>{
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gorevler.csv';a.click();URL.revokeObjectURL(url);
 });
 
-function render() {
+function render(){
   updateStats();
   const list=document.getElementById('task-list');
   let filtered=tasks.filter(t=>{
@@ -430,7 +519,7 @@ function render() {
   list.querySelectorAll('.delete-btn').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();deleteTask(btn.dataset.id);});});
 }
 
-function renderTrash() {
+function renderTrash(){
   updateStats();
   const list=document.getElementById('trash-list');
   if(!trash.length){list.innerHTML='<div class="empty"><i class="ti ti-trash" style="font-size:28px;display:block;margin:0 auto 8px"></i>Çöp kutusu boş</div>';return;}
@@ -472,19 +561,25 @@ function trashHTML(t,num){
   </div>`;
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeTab=btn.dataset.tab;document.getElementById('tab-gorevler').style.display=activeTab==='gorevler'?'':'none';document.getElementById('tab-cop').style.display=activeTab==='cop'?'':'none';if(activeTab==='cop')renderTrash();});});
-document.getElementById('clear-all-btn').addEventListener('click',clearAll);
-document.getElementById('btn-ekle').addEventListener('click',()=>{
+document.getElementById('btn-ekle').addEventListener('click',async()=>{
   const baslik=document.getElementById('f-baslik').value.trim();if(!baslik){document.getElementById('f-baslik').focus();return;}
   const tekrar=document.getElementById('f-tekrar').value;
-  tasks.unshift({id:Date.now().toString(),baslik,kaynak:document.getElementById('f-kaynak').value,birim:document.getElementById('f-birim').value.trim(),oncelik:document.getElementById('f-oncelik').value,tarih:document.getElementById('f-tarih').value,not:document.getElementById('f-not').value.trim(),tags:[...newTags],tekrar,tekrarGun:tekrar==='haftalik'?document.getElementById('f-tekrar-gun').value:'',durum:'Bekliyor',olusturulma:today(),history:[{text:'Görev oluşturuldu',date:today()}],links:[]});
-  newTags=[];save();['f-baslik','f-birim','f-not','f-tarih'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-tekrar').value='';document.getElementById('f-tekrar-gun-wrap').style.display='none';renderNewTags();render();
+  const task={id:Date.now().toString(),baslik,kaynak:document.getElementById('f-kaynak').value,birim:document.getElementById('f-birim').value.trim(),oncelik:document.getElementById('f-oncelik').value,tarih:document.getElementById('f-tarih').value,not:document.getElementById('f-not').value.trim(),tags:[...newTags],tekrar,tekrarGun:tekrar==='haftalik'?document.getElementById('f-tekrar-gun').value:'',durum:'Bekliyor',olusturulma:today(),history:[{text:'Görev oluşturuldu',date:today()}],links:[]};
+  tasks.unshift(task);newTags=[];
+  ['f-baslik','f-birim','f-not','f-tarih'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-tekrar').value='';document.getElementById('f-tekrar-gun-wrap').style.display='none';
+  renderNewTags();render();
+  await saveTask(task);
 });
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeTab=btn.dataset.tab;document.getElementById('tab-gorevler').style.display=activeTab==='gorevler'?'':'none';document.getElementById('tab-cop').style.display=activeTab==='cop'?'':'none';if(activeTab==='cop')renderTrash();});});
+document.getElementById('clear-all-btn').addEventListener('click',clearAll);
 document.getElementById('form-toggle').addEventListener('click',()=>{formOpen=!formOpen;document.getElementById('form-body').style.display=formOpen?'':'none';document.getElementById('form-chevron').style.transform=formOpen?'':'rotate(-90deg)';});
 document.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;render();});});
 document.getElementById('search-input').addEventListener('input',e=>{searchQuery=e.target.value;render();});
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-render();
+
+loadData();
 </script>
 </body>
 </html>
