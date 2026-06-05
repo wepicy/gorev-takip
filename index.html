@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Görev Takip</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f8; color: #1a1a18; min-height: 100vh; }
@@ -40,8 +43,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-row { display: flex; justify-content: space-between; margin-top: 12px; align-items: center; }
 .btn-primary { background: #1a1a18; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
 .btn-primary:hover { opacity: 0.85; }
+.export-wrap { position: relative; }
 .export-btn { background: transparent; border: 0.5px solid #d0d0ce; border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; display: flex; align-items: center; gap: 5px; }
 .export-btn:hover { color: #1a1a18; border-color: #888; }
+.export-dropdown { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; background: #fff; border: 0.5px solid #e5e5e3; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); overflow: hidden; min-width: 160px; z-index: 50; }
+.export-dropdown.open { display: block; }
+.export-option { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 13px; cursor: pointer; color: #1a1a18; font-family: inherit; background: transparent; border: none; width: 100%; text-align: left; }
+.export-option:hover { background: #f9f9f8; }
+.export-option i { font-size: 15px; color: #888; }
 .tab-row { display: flex; margin-bottom: 1rem; border-bottom: 0.5px solid #e5e5e3; }
 .tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #888; font-family: inherit; margin-bottom: -0.5px; display: flex; align-items: center; gap: 5px; }
 .tab-btn.active { color: #1a1a18; border-bottom-color: #1a1a18; font-weight: 500; }
@@ -174,7 +183,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="form-group"><label>Not (isteğe bağlı)</label><textarea id="f-not" placeholder="Ek detaylar..."></textarea></div>
       </div>
       <div class="btn-row">
-        <button class="export-btn" id="export-btn"><i class="ti ti-download" style="font-size:14px"></i>Dışa aktar</button>
+        <div class="export-wrap">
+          <button class="export-btn" id="export-btn"><i class="ti ti-download" style="font-size:14px"></i>Dışa aktar <i class="ti ti-chevron-up" style="font-size:12px"></i></button>
+          <div class="export-dropdown" id="export-dropdown">
+            <button class="export-option" id="exp-excel"><i class="ti ti-file-spreadsheet"></i>Excel (.xlsx)</button>
+            <button class="export-option" id="exp-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
+            <button class="export-option" id="exp-csv"><i class="ti ti-file-text"></i>CSV</button>
+          </div>
+        </div>
         <button class="btn-primary" id="btn-ekle"><i class="ti ti-plus" style="font-size:14px;vertical-align:-1px;margin-right:4px"></i>Görevi kaydet</button>
       </div>
     </div>
@@ -266,7 +282,7 @@ let detailId=null, editOpen=false, newTags=[], editTags=[];
 
 function setSyncStatus(state) {
   const dot=document.getElementById('sync-dot'), text=document.getElementById('sync-text');
-  if(state==='ok'){dot.className='sync-dot green';text.textContent='Senkronize, her şey yolunda';}
+  if(state==='ok'){dot.className='sync-dot green';text.textContent='Senkronize';}
   else if(state==='saving'){dot.className='sync-dot yellow';text.textContent='Kaydediliyor...';}
   else if(state==='error'){dot.className='sync-dot red';text.textContent='Bağlantı hatası';}
   else{dot.className='sync-dot';text.textContent='Bağlanıyor...';}
@@ -492,13 +508,6 @@ document.getElementById('ef-tag-input').addEventListener('keydown',e=>{if(e.key=
 document.getElementById('tag-input-wrap').addEventListener('click',()=>document.getElementById('f-tag-input').focus());
 document.getElementById('ef-tag-wrap').addEventListener('click',()=>document.getElementById('ef-tag-input').focus());
 
-document.getElementById('export-btn').addEventListener('click',()=>{
-  const header=['#','Başlık','Durum','Kaynak','Birim','Öncelik','Son Tarih','Tekrarlama','Etiketler','Not','Oluşturulma'];
-  const rows=tasks.map((t,i)=>[i+1,t.baslik,t.durum,t.kaynak,t.birim||'',t.oncelik,t.tarih?formatDate(t.tarih):'',t.tekrar?TEKRAR_LABEL[t.tekrar]:'',(t.tags||[]).join('; '),(t.not||'').replace(/\n/g,' '),formatDate(t.olusturulma)]);
-  const csv=[header,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gorevler.csv';a.click();URL.revokeObjectURL(url);
-});
 
 function render(){
   updateStats();
@@ -570,6 +579,73 @@ document.getElementById('btn-ekle').addEventListener('click',async()=>{
   document.getElementById('f-tekrar').value='';document.getElementById('f-tekrar-gun-wrap').style.display='none';
   renderNewTags();render();
   await saveTask(task);
+});
+
+// Export dropdown
+document.getElementById('export-btn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('export-dropdown').classList.toggle('open');});
+document.addEventListener('click',()=>document.getElementById('export-dropdown').classList.remove('open'));
+
+function exportRows(){
+  return tasks.map((t,i)=>[i+1, t.baslik, t.durum, t.kaynak, t.birim||'', t.oncelik, t.tarih?formatDate(t.tarih):'', t.tekrar?TEKRAR_LABEL[t.tekrar]:'', (t.tags||[]).join('; '), (t.not||'').replace(/\n/g,' ')]);
+}
+const exportHeaders = ['#','Başlık','Durum','Kaynak','Birim','Öncelik','Son Tarih','Tekrarlama','Etiketler','Not'];
+
+document.getElementById('exp-csv').addEventListener('click',()=>{
+  const csv=[exportHeaders,...exportRows()].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gorevler.csv';a.click();URL.revokeObjectURL(url);
+  document.getElementById('export-dropdown').classList.remove('open');
+});
+
+document.getElementById('exp-excel').addEventListener('click',()=>{
+  const wb = XLSX.utils.book_new();
+  const wsData = [exportHeaders, ...exportRows()];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [4,30,15,12,15,10,12,12,20,30].map(w=>({wch:w}));
+  // Style header row
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const cell=ws[XLSX.utils.encode_cell({r:0,c})];
+    if(cell) cell.s={font:{bold:true},fill:{fgColor:{rgb:'1a1a18'}}};
+  }
+  XLSX.utils.book_append_sheet(wb, ws, 'Görevler');
+  XLSX.writeFile(wb, 'gorevler.xlsx');
+  document.getElementById('export-dropdown').classList.remove('open');
+});
+
+document.getElementById('exp-pdf').addEventListener('click',()=>{
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  doc.setFont('helvetica');
+  doc.setFontSize(16);
+  doc.text('Gorev Takip Raporu', 14, 18);
+  doc.setFontSize(10);
+  doc.setTextColor(150);
+  doc.text(new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}), 14, 25);
+  doc.setTextColor(0);
+
+  // Stats box
+  const statLabels=[['Toplam',tasks.length],['Devam Eden',tasks.filter(t=>t.durum==='Devam Ediyor').length],['Gecikmiş',tasks.filter(t=>isOverdue(t)).length],['Tamamlanan',tasks.filter(t=>t.durum==='Tamamlandı').length]];
+  statLabels.forEach((s,i)=>{
+    const x=14+i*60;
+    doc.setFillColor(249,249,248);doc.roundedRect(x,30,55,16,2,2,'F');
+    doc.setFontSize(8);doc.setTextColor(120);doc.text(s[0],x+4,37);
+    doc.setFontSize(14);doc.setTextColor(26,26,24);doc.text(String(s[1]),x+4,44);
+  });
+
+  const rows = exportRows().map(r=>r.map(c=>String(c).substring(0,40)));
+  doc.autoTable({
+    head:[exportHeaders],
+    body: rows,
+    startY: 52,
+    styles:{fontSize:8,cellPadding:2},
+    headStyles:{fillColor:[26,26,24],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[249,249,248]},
+    columnStyles:{0:{cellWidth:8},1:{cellWidth:50},2:{cellWidth:22},3:{cellWidth:20},4:{cellWidth:22},5:{cellWidth:16},6:{cellWidth:20},7:{cellWidth:18},8:{cellWidth:24},9:{cellWidth:40}},
+    margin:{left:14,right:14}
+  });
+  doc.save('gorevler.pdf');
+  document.getElementById('export-dropdown').classList.remove('open');
 });
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeTab=btn.dataset.tab;document.getElementById('tab-gorevler').style.display=activeTab==='gorevler'?'':'none';document.getElementById('tab-cop').style.display=activeTab==='cop'?'':'none';if(activeTab==='cop')renderTrash();});});
